@@ -178,7 +178,10 @@ return [
         App\Providers\RouteServiceProvider::class,
 
         // Laravel chunked upload
-        Pion\Laravel\ChunkUpload\Providers\ChunkUploadServiceProvider::class
+        Pion\Laravel\ChunkUpload\Providers\ChunkUploadServiceProvider::class,
+
+        // Laravel CORS
+        Barryvdh\Cors\ServiceProvider::class
     ],
 
     /*

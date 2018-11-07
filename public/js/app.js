@@ -132,10 +132,10 @@ if ($("#my-awesome-dropzone").length > 0) {
         // Setup chunking
         chunking: true,
         method: "POST",
-        maxFilesize: 400000000,
-        chunkSize: 1000000,
+        maxFilesize: 12,
+        chunkSize: 100000,
         // If true, the individual chunks of a file are being uploaded simultaneously.
-        parallelChunkUploads: true
+        parallelChunkUploads: false
     });
 
     // Append token to the request - required for web routes
@@ -146,15 +146,16 @@ if ($("#my-awesome-dropzone").length > 0) {
 
 if ($("#mediaZoneUpload").length > 0) {
 
-    var token = $('input[name=_token]').val();
     var mediaDropzone = new Dropzone("#mediaZoneUpload", {
         // Setup chunking
         chunking: true,
         method: "POST",
-        maxFilesize: 400000000,
-        chunkSize: 1000000,
+        maxFilesize: 2048,
+        chunkSize: 2000000,
         // If true, the individual chunks of a file are being uploaded simultaneously.
-        parallelChunkUploads: true
+        parallelChunkUploads: false,
+        dictDefaultMessage: 'Chọn file upload !',
+        dictFileTooBig: "File quá lớn, file tối đa : {{maxFilesize}} MB."
     });
 };
 
