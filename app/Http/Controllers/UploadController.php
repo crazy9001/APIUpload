@@ -11,6 +11,17 @@ use Pion\Laravel\ChunkUpload\Receiver\FileReceiver;
 
 class UploadController extends Controller
 {
+
+    /**
+     * @var mixed
+     */
+    protected $disk;
+
+    public function __construct()
+    {
+        $this->disk = Storage::disk(config('filesystems.default'));
+    }
+
     /**
      * Handles the file upload
      *
@@ -96,10 +107,10 @@ class UploadController extends Controller
 
         // Build the file path
         $filePath = "upload/{$mime}/{$dateFolder}/";
-        $finalPath = storage_path("app/".$filePath);
 
+        // It's better to use streaming Streaming (laravel 5.4+)
         // move the file name
-        $file->move($finalPath, $fileName);
+        $this->disk->putFileAs($filePath, $file, $fileName);
 
         return response()->json([
             'path' => $filePath,

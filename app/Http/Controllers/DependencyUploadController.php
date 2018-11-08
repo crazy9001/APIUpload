@@ -21,7 +21,7 @@ class DependencyUploadController extends UploadController
      * @throws UploadMissingFileException
      *
      */
-    public function uploadFile(FileReceiver $receiver)
+    public function uploadFile(Request $request, FileReceiver $receiver)
     {
         // check if the upload is success, throw exception or return response you need
         if ($receiver->isUploaded() === false) {
