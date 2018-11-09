@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\File;
+use App\Folder;
 use Storage;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -97,26 +99,46 @@ class UploadController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function saveFile(UploadedFile $file)
+    protected function saveFile($request, UploadedFile $file)
     {
+        // Group file by folder name
+        $folderId = $request->input('folder');
+        $folder = Folder::where(['slug' => $folderId])->select(['slug', 'id'])->first();
+        $folderId = $folder ? $folder->id : 0;
+        $folderName = $folder ?  $folder->slug : null;
+
         $fileName = $this->createFilename($file);
         // Group files by mime type
         $mime = str_replace('/', '-', $file->getMimeType());
+        $mimeType =  $file->getMimeType();
         // Group files by the date (week
         $dateFolder = date("Y-m-d");
-
+        //Get Client Name
+        $clientName = getClientName($request);
         // Build the file path
-        $filePath = "upload/{$mime}/{$dateFolder}/";
-
+        $filePath = "upload/$clientName/{$mime}/{$dateFolder}/";
         // It's better to use streaming Streaming (laravel 5.4+)
         // move the file name
         $this->disk->putFileAs($filePath, $file, $fileName);
 
-        return response()->json([
-            'path' => $filePath,
-            'name' => $fileName,
-            'mime_type' => $mime
-        ]);
+        try {
+            // save data
+            $file = new File();
+            $file->user_id = $request->user_id;
+            $file->client_id = getClientId($request);
+            $file->folder_id = $folderId;
+            $file->mime_type = $mimeType;
+            $file->file_name = $fileName;
+            $file->path = $this->disk->url($filePath . $fileName);
+            $file->size = $this->disk->size($filePath . $fileName);
+            $file->save();
+
+            return response()->json($file);
+        }
+        catch (\Exception $exception) {
+            return response()->json($exception);
+        }
+
     }
 
     /**
@@ -130,7 +152,7 @@ class UploadController extends Controller
         $filename = str_replace(".".$extension, "", $file->getClientOriginalName()); // Filename without extension
 
         // Add timestamp hash to name of the file
-        $filename .= "_" . md5(time()) . "." . $extension;
+        $filename = md5(time()) . '-' . $filename . "." . $extension;
 
         return $filename;
     }

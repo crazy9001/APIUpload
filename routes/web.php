@@ -21,4 +21,4 @@ Route::get('/dropzone', function () {
     ]);
 });
 
-Route::middleware(['api_key'])->post('upload', 'DependencyUploadController@uploadFile');
+Route::middleware(['auth.apikey'])->post('upload', 'DependencyUploadController@uploadFile');

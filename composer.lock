@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e6448c76ce531bc3539a90562fa87b6f",
+    "content-hash": "4d83f4ff5aba1a29e95c2bc4addc1f8e",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -330,6 +330,56 @@
                 "validator"
             ],
             "time": "2018-09-25T20:47:26+00:00"
+        },
+        {
+            "name": "ejarnutowski/laravel-api-key",
+            "version": "1.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ejarnutowski/laravel-api-key.git",
+                "reference": "cdca412606ebadfb1821925a3036b3a15edea665"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ejarnutowski/laravel-api-key/zipball/cdca412606ebadfb1821925a3036b3a15edea665",
+                "reference": "cdca412606ebadfb1821925a3036b3a15edea665",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.5.9"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "dont-discover": [
+                        "ejarnutowski/laravel-api-key"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Ejarnutowski\\LaravelApiKey\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Elliott Jarnutowski",
+                    "email": "e@jarno.co"
+                }
+            ],
+            "description": "Authorize requests to your Laravel application with API keys",
+            "keywords": [
+                "Api Key",
+                "Authentication",
+                "api",
+                "authorization",
+                "laravel"
+            ],
+            "time": "2017-11-05T02:55:12+00:00"
         },
         {
             "name": "erusev/parsedown",

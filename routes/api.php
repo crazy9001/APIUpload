@@ -17,3 +17,4 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 Route::post('upload', 'DependencyUploadController@uploadFile');
+Route::get('media/gallery', 'DependencyUploadController@getGallery');

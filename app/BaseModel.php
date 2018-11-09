@@ -22,4 +22,36 @@ class BaseModel extends Model
         return $query->where('active', 1);
     }
 
+    /**
+     * Find a single entity by key value.
+     *
+     * @param array $condition
+     * @param array $select
+     * @param array $with
+     * @return mixed
+     * @author Toinn
+     */
+    public function getFirstBy(array $condition = [], array $select = [], array $with = [])
+    {
+        $query = $this->make($with);
+
+        if (!empty($select)) {
+            return $query->where($condition)->select($select)->first();
+        }
+
+        return $query->where($condition)->first();
+    }
+
+    /**
+     * Make a new instance of the entity to query on.
+     *
+     * @param array $with
+     * @return mixed
+     * @author Toinn
+     */
+    public function make(array $with = [])
+    {
+        return $this->with($with);
+    }
+
 }

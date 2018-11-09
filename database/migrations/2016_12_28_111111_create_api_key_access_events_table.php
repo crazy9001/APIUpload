@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateTableAccessClientKey extends Migration
+class CreateApiKeyAccessEventsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +13,15 @@ class CreateTableAccessClientKey extends Migration
      */
     public function up()
     {
-        Schema::create('api_keys', function (Blueprint $table) {
+        Schema::create('api_key_access_events', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('name_client');
-            $table->longtext('access_key', 15)->nullable();
-            $table->tinyInteger('active');
-            $table->softDeletes();
+            $table->unsignedInteger('api_key_id');
+            $table->ipAddress('ip_address');
+            $table->text('url');
             $table->timestamps();
+
+            $table->index('ip_address');
+            $table->foreign('api_key_id')->references('id')->on('api_keys');
         });
     }
 
@@ -30,6 +32,6 @@ class CreateTableAccessClientKey extends Migration
      */
     public function down()
     {
-        Schema::drop('api_keys');
+        Schema::dropIfExists('api_key_access_events');
     }
 }
