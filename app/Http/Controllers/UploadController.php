@@ -124,7 +124,7 @@ class UploadController extends Controller
         try {
             // save data
             $file = new File();
-            $file->user_id = $request->user_id;
+            $file->user_id = $request->user;
             $file->client_id = getClientId($request);
             $file->folder_id = $folderId;
             $file->mime_type = $mimeType;

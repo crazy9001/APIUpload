@@ -57,7 +57,7 @@ class File extends BaseModel
     public function getFilesByFolderId($request, $folder_id, $type = [])
     {
         $files = $this->where('folder_id', '=', $folder_id)
-            ->where('user_id', '=', $request->user_id)
+            ->where('user_id', '=', $request->user)
             ->where('client_id', '=', getClientId($request));
         if (!empty($type)) {
             $files = $files->whereIn('mime_type', $type);
