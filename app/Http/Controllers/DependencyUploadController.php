@@ -11,6 +11,7 @@ use Pion\Laravel\ChunkUpload\Handler\AbstractHandler;
 use Pion\Laravel\ChunkUpload\Handler\HandlerFactory;
 use Pion\Laravel\ChunkUpload\Receiver\FileReceiver;
 use App\Exceptions\MediaInvalidParent;
+use Validator;
 
 class DependencyUploadController extends UploadController
 {
@@ -26,6 +27,15 @@ class DependencyUploadController extends UploadController
      */
     public function uploadFile(Request $request, FileReceiver $receiver)
     {
+        $validator = Validator::make($request->all(), [
+            'user' => 'required',
+        ], [
+            'user.required' => 'Missing param'
+        ]);
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors()->first(), 400);
+        }
+
         // check if the upload is success, throw exception or return response you need
         if ($receiver->isUploaded() === false) {
             throw new UploadMissingFileException();
@@ -49,13 +59,27 @@ class DependencyUploadController extends UploadController
 
     public function getGallery(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'user' => 'required',
+        ], [
+            'user.required' => 'Missing param'
+        ]);
+        if ($validator->fails()) {
+            return $this->sendError($validator->errors()->first(), 400);
+        }
+
         $action = $request->input('action');
         $folderSlug = $request->input('folder');
+        $user = $request->input('user');
 
-        session()->forget('media_action');
-        session()->put('media_action', $action);
+
+        $filters['action'] = $action;
+        $filters['folderSlug'] = $folderSlug;
+        $filters['user'] = $user;
+        $filters['client'] = getClientId($request);
+
         try {
-            $contents = $this->getDirectory($request, $folderSlug);
+            $contents = $this->getDirectory($filters);
 
         } catch (MediaInvalidParent $e) {
             return response()->json($e);
@@ -64,7 +88,7 @@ class DependencyUploadController extends UploadController
 
     }
 
-    private function getDirectory($request, $folderSlug)
+    private function getDirectory($filters)
     {
         $folderModel = new Folder();
         $fileModel = new File();
@@ -72,8 +96,8 @@ class DependencyUploadController extends UploadController
         try {
             $contents = [];
             $folder = null;
-            if (is_string($folderSlug) && $folderSlug !== null) {
-                $folder = $folderModel->getFirstBy(['slug' => $folderSlug]);
+            if (is_string($filters['folderSlug']) && $filters['folderSlug'] !== null) {
+                $folder = $folderModel->getFirstBy(['slug' => $filters['folderSlug']]);
                 if (!$folder) {
                     throw new MediaInvalidParent;
                 }
@@ -81,20 +105,20 @@ class DependencyUploadController extends UploadController
             } else {
                 $folderId = 0;
             }
+            $filters['folderId'] = $folderId;
             // Get the folders
-            $contents['folders'] = $folderModel->getFolderByParentId($request, $folderId);
+            $contents['folders'] = $folderModel->getFolderByParentId($filters);
 
-            if (session('media_action') == 'image') {
+            if ($filters['action'] == 'image') {
                 // Get all the files
-                $contents['files'] = $fileModel->getFilesByFolderId($request, $folderId, ['image/jpeg', 'image/jpg', 'image/png']);
-            }elseif (session('media_action') == 'video') {
+                $contents['files'] = $fileModel->getFilesByFolderId($filters, ['image/jpeg', 'image/jpg', 'image/png']);
+            } elseif ($filters['action'] == 'video') {
                 // Get all the files
-                $contents['files'] = $fileModel->getFilesByFolderId($request, $folderId, ['video/mp4', 'video/x-flv', 'video/x-msvideo']);
+                $contents['files'] = $fileModel->getFilesByFolderId($filters, ['video/mp4', 'video/x-flv', 'video/x-msvideo']);
             } else {
                 // Get all the files
-                $contents['files'] = $fileModel->getFilesByFolderId($request, $folderId);
+                $contents['files'] = $fileModel->getFilesByFolderId($filters);
             }
-
             // Get parent folder details
             if ($folderId == 0) {
                 $contents['parentFolder'] = -1;
@@ -104,7 +128,7 @@ class DependencyUploadController extends UploadController
                 $contents['parentFolder'] = $folder->parentFolder()
                     ->first()->slug;
             }
-            $contents['currentFolder'] = $folderSlug != null ? $folderSlug : 0;
+            $contents['currentFolder'] = $filters['folderSlug'] != null ? $filters['folderSlug'] : 0;
             return $contents;
         } catch (MediaInvalidParent $e) {
             return response()->json($e);

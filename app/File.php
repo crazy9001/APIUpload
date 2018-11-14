@@ -28,7 +28,7 @@ class File extends BaseModel
         return $this->belongsTo(Folder::class, 'id', 'folder_id');
     }
 
-    public $fillable = ['user_id', 'client_id', 'folder_id', 'mime_type', 'file_name', 'path', 'size'];
+    public $fillable = ['user_id', 'client_id', 'folder_id', 'mime_type', 'file_name', 'path', 'size', 'name', 'thumbnails'];
 
     /**
      * @author Toi Nguyen
@@ -49,21 +49,36 @@ class File extends BaseModel
     }
 
     /**
-     * @param $folder_id
+     * @param array $filters
      * @param array $type
      * @return mixed
-     * @author Toinn
      */
-    public function getFilesByFolderId($request, $folder_id, $type = [])
+    public function getFilesByFolderId(array $filters, $type = [])
     {
-        $files = $this->where('folder_id', '=', $folder_id)
-            ->where('user_id', '=', $request->user)
-            ->where('client_id', '=', getClientId($request));
-        if (!empty($type)) {
-            $files = $files->whereIn('mime_type', $type);
+        $query = $this->where(function ($que) use($filters, $type) {
+            $que->where('client_id', '=', $filters['client']);
+            $que->where('user_id', '=', $filters['user']);
+            $que->where('folder_id', '=', $filters['folderId']);
+            if(isset($type) && !empty($type)){
+                $que->whereIn('mime_type', $type);
+            }
+        });
+        unset($filters['folderSlug']);
+        return $query->orderBy('file_name', 'asc')
+            ->paginate(50)->appends($filters);
+    }
+
+    public function createName($name, array $filters)
+    {
+        $index = 1;
+        $baseName = $filters['name'];
+        while ($this->where('name', '=', $name)
+            ->where('folder_id', '=', $filters['folder'])
+            ->where('user_id', '=', $filters['user'])
+            ->first()) {
+            $name = '(' . $index++ . ') ' . $baseName;
         }
-        return $files->orderBy('file_name', 'asc')
-            ->get();
+        return $name;
     }
 
 }

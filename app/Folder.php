@@ -58,13 +58,14 @@ class Folder extends BaseModel
      * @return mixed
      * @author Toinn
      */
-    public function getFolderByParentId($request, $folderId)
+    public function getFolderByParentId(array $filters)
     {
-        return $this->where('parent', '=', $folderId)
-            ->where(function ($query) use($request) {
-                $query->orWhere('user_id', '=', $request->user_id)
-                    ->orWhere('user_id', '=', 0)
-                    ->where('client_id', '=', getClientId($request));
+        return $this->where('parent', '=', $filters['folderId'])
+            ->where(function ($query) use($filters) {
+                $query->where('client_id', '=', $filters['client']);
+                if(isset($filters['user']) && !empty($filters['user'])){
+                    $query->where('user_id', '=', $filters['user']);
+                }
             })
             ->orderBy('name', 'asc')
             ->get();

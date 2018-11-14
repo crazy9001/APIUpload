@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\File;
+use App\File as FileModel;
 use App\Folder;
 use Storage;
 use Illuminate\Http\Request;
@@ -10,6 +10,8 @@ use Pion\Laravel\ChunkUpload\Exceptions\UploadMissingFileException;
 use Pion\Laravel\ChunkUpload\Handler\AbstractHandler;
 use Pion\Laravel\ChunkUpload\Handler\HandlerFactory;
 use Pion\Laravel\ChunkUpload\Receiver\FileReceiver;
+use File;
+use Validator;
 
 class UploadController extends Controller
 {
@@ -122,13 +124,17 @@ class UploadController extends Controller
         $this->disk->putFileAs($filePath, $file, $fileName);
 
         try {
+            $filters['user'] = $request->user;
+            $filters['name'] = File::name($file->getClientOriginalName());
+            $filters['folder'] = $folderId;
             // save data
-            $file = new File();
+            $file = new FileModel();
             $file->user_id = $request->user;
             $file->client_id = getClientId($request);
             $file->folder_id = $folderId;
             $file->mime_type = $mimeType;
             $file->file_name = $fileName;
+            $file->name = $file->createName($filters['name'], $filters);
             $file->path = $this->disk->url($filePath . $fileName);
             $file->size = $this->disk->size($filePath . $fileName);
             $file->save();
@@ -156,4 +162,23 @@ class UploadController extends Controller
 
         return $filename;
     }
+
+    /**
+     * return error response.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function sendError($errorMessages = [], $code = 404)
+    {
+        $response = [
+            'success' => false,
+        ];
+
+        if(!empty($errorMessages)){
+            $response['message'] = $errorMessages;
+        }
+
+        return response()->json($response, $code);
+    }
+
 }
