@@ -7,19 +7,23 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Image;
 
-class ProcessUpload implements ShouldQueue
+class ProcessGenerateThumbImage implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    protected $file;
+
+    protected $fileUpload;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($file)
     {
-        //
+        $this->fileUpload = $file;
     }
 
     /**
@@ -29,6 +33,10 @@ class ProcessUpload implements ShouldQueue
      */
     public function handle()
     {
-        //
+        $defaultThumbs = config('thumb_size.default_thumb_size');
+        dd($defaultThumbs);
+        foreach($defaultThumbs as $key => $thumbSize){
+
+        }
     }
 }

@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\File as FileModel;
 use App\Folder;
+use App\Jobs\ProcessGenerateThumbImage;
 use Storage;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -101,7 +102,7 @@ class UploadController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function saveFile($request, UploadedFile $file)
+    protected function saveFile($request, UploadedFile $fileUpload)
     {
         // Group file by folder name
         $folderId = $request->input('folder');
@@ -109,23 +110,23 @@ class UploadController extends Controller
         $folderId = $folder ? $folder->id : 0;
         $folderName = $folder ?  $folder->slug : null;
 
-        $fileName = $this->createFilename($file);
+        $fileName = $this->createFilename($fileUpload);
         // Group files by mime type
-        $mime = str_replace('/', '-', $file->getMimeType());
-        $mimeType =  $file->getMimeType();
+        $mime = str_replace('/', '-', $fileUpload->getMimeType());
+        $mimeType =  $fileUpload->getMimeType();
         // Group files by the date (week
-        $dateFolder = date("Y-m-d");
+        $dateFolder = date("Y/m/d");
         //Get Client Name
         $clientName = getClientName($request);
         // Build the file path
-        $filePath = "upload/$clientName/{$mime}/{$dateFolder}/";
+        //$filePath = "media/$clientName/{$mime}/{$dateFolder}/";
+        $filePath = "media/$clientName/{$dateFolder}/";
         // It's better to use streaming Streaming (laravel 5.4+)
         // move the file name
-        $this->disk->putFileAs($filePath, $file, $fileName);
-
+        $this->disk->putFileAs($filePath, $fileUpload, $fileName);
         try {
             $filters['user'] = $request->user;
-            $filters['name'] = File::name($file->getClientOriginalName());
+            $filters['name'] = File::name($fileUpload->getClientOriginalName());
             $filters['folder'] = $folderId;
             // save data
             $file = new FileModel();
@@ -138,8 +139,9 @@ class UploadController extends Controller
             $file->path = $this->disk->url($filePath . $fileName);
             $file->size = $this->disk->size($filePath . $fileName);
             $file->save();
-
-            return response()->json($file);
+            //dd(dispatch(new ProcessGenerateThumbImage($fileUpload)));
+            dispatch(new ProcessGenerateThumbImage($file));
+            return $this->sendResponse('Upload success');
         }
         catch (\Exception $exception) {
             return response()->json($exception);
@@ -179,6 +181,16 @@ class UploadController extends Controller
         }
 
         return response()->json($response, $code);
+    }
+
+    public function sendResponse($message)
+    {
+        $response = [
+            'success' => true,
+            'message' => $message,
+        ];
+
+        return response()->json($response, 200);
     }
 
 }
