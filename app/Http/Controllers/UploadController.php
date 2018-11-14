@@ -13,6 +13,7 @@ use Pion\Laravel\ChunkUpload\Handler\HandlerFactory;
 use Pion\Laravel\ChunkUpload\Receiver\FileReceiver;
 use File;
 use Validator;
+use Image;
 
 class UploadController extends Controller
 {
@@ -138,15 +139,39 @@ class UploadController extends Controller
             $file->name = $file->createName($filters['name'], $filters);
             $file->path = $this->disk->url($filePath . $fileName);
             $file->size = $this->disk->size($filePath . $fileName);
+            //$file->save();
+            if(substr($fileUpload->getMimeType(), 0, 5) == 'image') {
+                $dataThumb = json_encode($this->generateThumbImage($request, $fileUpload));
+                $file->thumbnails = $dataThumb;
+            }
             $file->save();
-            //dd(dispatch(new ProcessGenerateThumbImage($fileUpload)));
-            dispatch(new ProcessGenerateThumbImage($file));
+
             return $this->sendResponse('Upload success');
         }
         catch (\Exception $exception) {
             return response()->json($exception);
         }
 
+    }
+
+    public function generateThumbImage($request, $fileUpload)
+    {
+        //Get Client Name
+        $clientName = getClientName($request);
+        $defaultThumb = config('thumb_size.default_thumb_size');
+        $fileName = $this->createFilename($fileUpload);
+        $array = array();
+        foreach($defaultThumb as $key => $thumb){
+            $dateFolder = date("Y/m/d");
+            $thumbPath = "thumb/$clientName/$key/{$dateFolder}/";
+            $resize = Image::make($fileUpload)->resize($thumb, null, function ($constraint) {
+                $constraint->aspectRatio();
+            })->encode($fileUpload->getClientOriginalExtension());
+            $this->disk->put($thumbPath . $fileName , $resize->__toString());
+            $urlThumb = $this->disk->url($thumbPath . $fileName);
+            $array[$key] = $urlThumb;
+        }
+        return $array;
     }
 
     /**
