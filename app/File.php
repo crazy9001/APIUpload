@@ -19,6 +19,10 @@ class File extends BaseModel
      */
     protected $table = 'media_storage';
 
+    protected $casts = [
+        'thumbnails' => 'array',
+    ];
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
 

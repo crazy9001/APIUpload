@@ -185,6 +185,8 @@ return [
         Barryvdh\Cors\ServiceProvider::class,
         Ejarnutowski\LaravelApiKey\Providers\ApiKeyServiceProvider::class,
         Intervention\Image\ImageServiceProvider::class,
+        Lakshmaji\Thumbnail\ThumbnailServiceProvider::class,
+        Pbmedia\LaravelFFMpeg\FFMpegServiceProvider::class,
     ],
 
     /*
@@ -234,6 +236,8 @@ return [
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
         'Image' => Intervention\Image\Facades\Image::class,
+        'Thumbnail' => Lakshmaji\Thumbnail\Facade\Thumbnail::class,
+        'FFMpeg' => Pbmedia\LaravelFFMpeg\FFMpegFacade::class
     ],
 
 ];

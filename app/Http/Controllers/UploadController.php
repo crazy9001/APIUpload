@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\File as FileModel;
 use App\Folder;
 use App\Jobs\ProcessGenerateThumbImage;
+use App\Jobs\ProcessGenerateThumbVideo;
 use Storage;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -14,6 +15,8 @@ use Pion\Laravel\ChunkUpload\Receiver\FileReceiver;
 use File;
 use Validator;
 use Image;
+use Carbon\Carbon;
+use Thumbnail;
 
 class UploadController extends Controller
 {
@@ -121,57 +124,97 @@ class UploadController extends Controller
         $clientName = getClientName($request);
         // Build the file path
         //$filePath = "media/$clientName/{$mime}/{$dateFolder}/";
-        $filePath = "media/$clientName/{$dateFolder}/";
+        $filePath = "/media/$clientName/{$dateFolder}/";
         // It's better to use streaming Streaming (laravel 5.4+)
         // move the file name
         $this->disk->putFileAs($filePath, $fileUpload, $fileName);
-        try {
-            $filters['user'] = $request->user;
-            $filters['name'] = File::name($fileUpload->getClientOriginalName());
-            $filters['folder'] = $folderId;
-            // save data
-            $file = new FileModel();
-            $file->user_id = $request->user;
-            $file->client_id = getClientId($request);
-            $file->folder_id = $folderId;
-            $file->mime_type = $mimeType;
-            $file->file_name = $fileName;
-            $file->name = $file->createName($filters['name'], $filters);
-            $file->path = $this->disk->url($filePath . $fileName);
-            $file->size = $this->disk->size($filePath . $fileName);
-            //$file->save();
-            if(substr($fileUpload->getMimeType(), 0, 5) == 'image') {
-                $dataThumb = json_encode($this->generateThumbImage($request, $fileUpload));
-                $file->thumbnails = $dataThumb;
-            }
-            $file->save();
+        /*try {
 
-            return $this->sendResponse('Upload success');
         }
         catch (\Exception $exception) {
             return response()->json($exception);
+        }*/
+
+        $filters['user'] = $request->user;
+        $filters['name'] = File::name($fileUpload->getClientOriginalName());
+        $filters['folder'] = $folderId;
+        // save data
+        $file = new FileModel();
+        $file->user_id = $request->user;
+        $file->client_id = getClientId($request);
+        $file->folder_id = $folderId;
+        $file->mime_type = $mimeType;
+        $file->file_name = $fileName;
+        $file->name = $file->createName($filters['name'], $filters);
+        $file->path = $filePath . $fileName;
+        $file->size = $this->disk->size($filePath . $fileName);
+        $file->save();
+
+        $data['client'] = getClientName($request);
+        $data['file']   = $file;
+        $data['fileUpload'] = $fileUpload;
+
+        $queue['file'] = $file;
+        $queue['client'] = getClientName($request);
+        if(substr($file->mime_type, 0, 5) == 'image') {
+            $this->generateThumbImage($data);
+        }elseif(substr($file->mime_type, 0, 5) == 'video') {
+            //$this->generateThumbVideo($data);
+            ProcessGenerateThumbVideo::dispatch($queue);
         }
+        return $this->sendResponse('Upload success');
 
     }
 
-    public function generateThumbImage($request, $fileUpload)
+    public function generateThumbVideo(array $data)
+    {
+
+        $path = $this->disk->getAdapter()->getPathPrefix();
+        $fileName = str_replace(".".$data['fileUpload']->getClientOriginalExtension(), "", $data['fileUpload']->getClientOriginalName()) . '.jpg';
+        $duration = \FFMpeg\FFProbe::create([
+            'ffmpeg.binaries'  => config('thumbnail.binaries.path.ffmpeg'),
+            'ffprobe.binaries' => config('thumbnail.binaries.path.ffprobe'),
+        ])
+            ->format($path. $data['file']->path)
+            ->get('duration');
+        $time_to_image    = rand(10, floor(($duration)/2));
+
+        $defaultThumbVideo = config('dimensions.dimensions_video');
+        $array = array();
+        foreach($defaultThumbVideo as $key => $thumb){
+            $dateFolder = date("Y/m/d");
+            $fixPath = "/thumb/{$data['client']}/$key/{$dateFolder}";
+            $thumbPath = $path . '/' . $fixPath;
+            if(!File::isDirectory($thumbPath)){
+                File::makeDirectory($thumbPath, 0777, true, true);
+            }
+            $arrayDimension = explode('x', $thumb);
+            Thumbnail::getThumbnail($path . $data['file']->path, $thumbPath, $fileName, $time_to_image);
+            $urlThumb = $fixPath . '/' . $fileName;
+            $array[$key] = $urlThumb;
+        }
+        $file = FileModel::find($data['file']->id);
+        $file->update(['thumbnails' => $array]);
+    }
+
+    public function generateThumbImage(array $data)
     {
         //Get Client Name
-        $clientName = getClientName($request);
-        $defaultThumb = config('thumb_size.default_thumb_size');
-        $fileName = $this->createFilename($fileUpload);
+        $defaultThumb = config('dimensions.dimensions_image');
+        $fileName = $this->createFilename($data['fileUpload']);
         $array = array();
         foreach($defaultThumb as $key => $thumb){
             $dateFolder = date("Y/m/d");
-            $thumbPath = "thumb/$clientName/$key/{$dateFolder}/";
-            $resize = Image::make($fileUpload)->resize($thumb, null, function ($constraint) {
+            $thumbPath = "/thumb/{$data['client']}/$key/{$dateFolder}/";
+            $resize = Image::make($data['fileUpload'])->resize($thumb, null, function ($constraint) {
                 $constraint->aspectRatio();
-            })->encode($fileUpload->getClientOriginalExtension());
+            })->encode($data['fileUpload']->getClientOriginalExtension());
             $this->disk->put($thumbPath . $fileName , $resize->__toString());
-            $urlThumb = $this->disk->url($thumbPath . $fileName);
+            $urlThumb = $thumbPath . $fileName;
             $array[$key] = $urlThumb;
         }
-        return $array;
+        $file = FileModel::find($data['file']->id);
+        $file->update(['thumbnails' => $array]);
     }
 
     /**
