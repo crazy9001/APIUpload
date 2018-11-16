@@ -3,7 +3,6 @@ namespace App\Http\Controllers;
 
 use App\File as FileModel;
 use App\Folder;
-use App\Jobs\ProcessGenerateThumbImage;
 use App\Jobs\ProcessGenerateThumbVideo;
 use Storage;
 use Illuminate\Http\Request;
@@ -128,42 +127,38 @@ class UploadController extends Controller
         // It's better to use streaming Streaming (laravel 5.4+)
         // move the file name
         $this->disk->putFileAs($filePath, $fileUpload, $fileName);
-        /*try {
+        try {
+            $filters['user'] = $request->user;
+            $filters['name'] = File::name($fileUpload->getClientOriginalName());
+            $filters['folder'] = $folderId;
+            // save data
+            $file = new FileModel();
+            $file->user_id = $request->user;
+            $file->client_id = getClientId($request);
+            $file->folder_id = $folderId;
+            $file->mime_type = $mimeType;
+            $file->file_name = $fileName;
+            $file->name = $file->createName($filters['name'], $filters);
+            $file->path = $filePath . $fileName;
+            $file->size = $this->disk->size($filePath . $fileName);
+            $file->save();
 
+            $data['client'] = getClientName($request);
+            $data['file']   = $file;
+            $data['fileUpload'] = $fileUpload;
+
+            $queue['file'] = $file;
+            $queue['client'] = getClientName($request);
+            if(substr($file->mime_type, 0, 5) == 'image') {
+                $this->generateThumbImage($data);
+            }elseif(substr($file->mime_type, 0, 5) == 'video') {
+                ProcessGenerateThumbVideo::dispatch($queue);
+            }
+            return $this->sendResponse('Upload success');
         }
         catch (\Exception $exception) {
             return response()->json($exception);
-        }*/
-
-        $filters['user'] = $request->user;
-        $filters['name'] = File::name($fileUpload->getClientOriginalName());
-        $filters['folder'] = $folderId;
-        // save data
-        $file = new FileModel();
-        $file->user_id = $request->user;
-        $file->client_id = getClientId($request);
-        $file->folder_id = $folderId;
-        $file->mime_type = $mimeType;
-        $file->file_name = $fileName;
-        $file->name = $file->createName($filters['name'], $filters);
-        $file->path = $filePath . $fileName;
-        $file->size = $this->disk->size($filePath . $fileName);
-        $file->save();
-
-        $data['client'] = getClientName($request);
-        $data['file']   = $file;
-        $data['fileUpload'] = $fileUpload;
-
-        $queue['file'] = $file;
-        $queue['client'] = getClientName($request);
-        if(substr($file->mime_type, 0, 5) == 'image') {
-            $this->generateThumbImage($data);
-        }elseif(substr($file->mime_type, 0, 5) == 'video') {
-            //$this->generateThumbVideo($data);
-            ProcessGenerateThumbVideo::dispatch($queue);
         }
-        return $this->sendResponse('Upload success');
-
     }
 
     public function generateThumbVideo(array $data)

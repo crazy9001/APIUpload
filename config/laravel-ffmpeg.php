@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'default_disk' => 'local',
+    'default_disk' => 'public',
 
     'ffmpeg' => [
         'binaries' => env('FFMPEG_BINARIES', 'ffmpeg'),

@@ -38,12 +38,21 @@ class ProcessGenerateThumbVideo implements ShouldQueue
      */
     public function handle()
     {
-        FFMpeg::fromDisk('public')
-            ->open($this->data['file']->path)
-            ->getFrameFromSeconds(10)
-            ->export()
-            ->toDisk('public')
-            ->save('FrameAt10sec.png');
-
+        $defaultThumbVideo = config('dimensions.dimensions_video');
+        $media = FFMpeg::open($this->data['file']->path);
+        $durationInSeconds = $media->getDurationInSeconds();
+        $time_to_image    = rand(10, floor(($durationInSeconds)/2));
+        $array = array();
+        foreach($defaultThumbVideo as $key => $thumb){
+            $dateFolder = date("Y/m/d");
+            $thumbPath = "/thumb/{$this->data['client']}/$key/{$dateFolder}";
+            $media->getFrameFromSeconds($time_to_image)
+                ->export()
+                ->toDisk('public')
+                ->save($thumbPath . '/thumb-' . $this->data['file']->name . '.png');
+            $array[$key] = $thumbPath . '/thumb-' . $this->data['file']->name . '.png';
+        }
+        $file = FileModel::find($this->data['file']->id);
+        $file->update(['thumbnails' => $array]);
     }
 }
