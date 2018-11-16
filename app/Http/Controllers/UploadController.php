@@ -114,8 +114,7 @@ class UploadController extends Controller
         $folderName = $folder ?  $folder->slug : null;
 
         $fileName = $this->createFilename($fileUpload);
-        // Group files by mime type
-        $mime = str_replace('/', '-', $fileUpload->getMimeType());
+
         $mimeType =  $fileUpload->getMimeType();
         // Group files by the date (week
         $dateFolder = date("Y/m/d");
