@@ -46,11 +46,13 @@ class ProcessGenerateThumbVideo implements ShouldQueue
         foreach($defaultThumbVideo as $key => $thumb){
             $dateFolder = date("Y/m/d");
             $thumbPath = "/thumb/{$this->data['client']}/$key/{$dateFolder}";
+            $thumbName = 'thumb-' . str_slug($this->data['file']->name) . '.png';
+
             $media->getFrameFromSeconds($time_to_image)
                 ->export()
                 ->toDisk('public')
-                ->save($thumbPath . '/thumb-' . $this->data['file']->name . '.png');
-            $array[$key] = $thumbPath . '/thumb-' . $this->data['file']->name . '.png';
+                ->save($thumbPath . '/' . $thumbName);
+            $array[$key] = $thumbPath . '/' . $thumbName;
         }
         $file = FileModel::find($this->data['file']->id);
         $file->update(['thumbnails' => $array]);

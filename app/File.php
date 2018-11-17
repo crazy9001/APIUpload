@@ -68,7 +68,7 @@ class File extends BaseModel
             }
         });
         unset($filters['folderSlug']);
-        return $query->orderBy('file_name', 'asc')
+        return $query->orderBy('created_at', 'desc')
             ->paginate(50)->appends($filters);
     }
 

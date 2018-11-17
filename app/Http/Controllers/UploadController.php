@@ -195,7 +195,7 @@ class UploadController extends Controller
     {
         //Get Client Name
         $defaultThumb = config('dimensions.dimensions_image');
-        $fileName = $this->createFilename($data['fileUpload']);
+        $thumbName = $this->createFilename($data['fileUpload']);
         $array = array();
         foreach($defaultThumb as $key => $thumb){
             $dateFolder = date("Y/m/d");
@@ -203,8 +203,8 @@ class UploadController extends Controller
             $resize = Image::make($data['fileUpload'])->resize($thumb, null, function ($constraint) {
                 $constraint->aspectRatio();
             })->encode($data['fileUpload']->getClientOriginalExtension());
-            $this->disk->put($thumbPath . $fileName , $resize->__toString());
-            $urlThumb = $thumbPath . $fileName;
+            $this->disk->put($thumbPath . $thumbName , $resize->__toString());
+            $urlThumb = $thumbPath . $thumbName;
             $array[$key] = $urlThumb;
         }
         $file = FileModel::find($data['file']->id);
@@ -220,9 +220,9 @@ class UploadController extends Controller
     {
         $extension = $file->getClientOriginalExtension();
         $filename = str_replace(".".$extension, "", $file->getClientOriginalName()); // Filename without extension
-
+        $filename = str_slug($filename);
         // Add timestamp hash to name of the file
-        $filename = md5(time()) . '-' . $filename . "." . $extension;
+        $filename = $filename . '-' . md5(time()) . "." . $extension;
 
         return $filename;
     }
