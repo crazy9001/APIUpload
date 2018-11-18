@@ -29,8 +29,10 @@ class DependencyUploadController extends UploadController
     {
         $validator = Validator::make($request->all(), [
             'user' => 'required',
+            'file' =>'required'
         ], [
-            'user.required' => 'Missing param'
+            'user.required' => 'Missing param',
+            'file.required' => 'Missing param'
         ]);
         if ($validator->fails()) {
             return $this->sendError($validator->errors()->first(), 400);
