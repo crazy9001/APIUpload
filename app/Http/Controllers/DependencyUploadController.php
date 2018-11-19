@@ -116,7 +116,7 @@ class DependencyUploadController extends UploadController
                 $contents['files'] = $fileModel->getFilesByFolderId($filters, ['image/jpeg', 'image/jpg', 'image/png']);
             } elseif ($filters['action'] == 'video') {
                 // Get all the files
-                $contents['files'] = $fileModel->getFilesByFolderId($filters, ['video/mp4', 'video/x-flv', 'video/x-msvideo']);
+                $contents['files'] = $fileModel->getFilesByFolderId($filters, ['video/mp4', 'video/x-flv', 'video/x-msvideo', 'video/x-m4v']);
             } else {
                 // Get all the files
                 $contents['files'] = $fileModel->getFilesByFolderId($filters);
