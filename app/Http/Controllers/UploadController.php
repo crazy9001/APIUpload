@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\File as FileModel;
 use App\Folder;
+use App\Jobs\ProcessConvertToHls;
 use App\Jobs\ProcessGenerateThumbVideo;
 use Storage;
 use Illuminate\Http\Request;
@@ -122,7 +123,7 @@ class UploadController extends Controller
         $clientName = getClientName($request);
         // Build the file path
         //$filePath = "media/$clientName/{$mime}/{$dateFolder}/";
-        $filePath = "/media/$clientName/{$dateFolder}/";
+        $filePath = "media/$clientName/{$dateFolder}/";
         // It's better to use streaming Streaming (laravel 5.4+)
         // move the file name
         $this->disk->putFileAs($filePath, $fileUpload, $fileName);
